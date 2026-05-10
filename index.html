@@ -29,7 +29,6 @@
             font-weight: bold; 
             border: 2px solid #003366; 
             margin-bottom: 15px; 
-            font-size: 1rem;
         }
         #reader { 
             width: 100%; 
@@ -39,6 +38,7 @@
             border-radius: 15px; 
             overflow: hidden; 
             background: white; 
+            min-height: 300px;
         }
         #result { 
             margin-top: 20px; 
@@ -53,6 +53,16 @@
         .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .processing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .btn-retry {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #003366;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -64,12 +74,73 @@
     <div class="inst-badge" id="instDisplay">📍 Loading...</div>
 
     <div id="reader"></div>
+    <button id="retryBtn" class="btn-retry" onclick="location.reload()">ลองเปิดกล้องอีกครั้ง</button>
     
-    <div id="result">พร้อมสำหรับการสแกน</div>
+    <div id="result">กำลังเตรียมความพร้อม...</div>
 
     <script>
-        // URL ล่าสุดที่คุณระบุมา (ลงท้ายด้วย 20E8/exec)
+        // URL ล่าสุด (ลงท้ายด้วย 20E8/exec)
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXDgoW-88F5BauTkrqfB3ReoLZLlG1pCpmpXLcXXl3xzu0q7Cic1nJ_WBKmELL20E8/exec";
         
         const urlParams = new URLSearchParams(window.location.search);
         const instName = urlParams.get('inst') || "General_Visitor";
+
+        // แสดงชื่อสถาบัน
+        const displayDiv = document.getElementById('instDisplay');
+        if (instName === "General_Visitor") {
+            displayDiv.innerText = "📢 Welcome to Main Event Check-in";
+        } else {
+            displayDiv.innerText = "📍 Institution: " + instName.replace(/_/g, ' ');
+        }
+
+        const html5QrCode = new Html5Qrcode("reader");
+
+        function onScanSuccess(decodedText) {
+            const resDiv = document.getElementById('result');
+            resDiv.innerText = "⏳ กำลังบันทึกข้อมูล...";
+            resDiv.className = "processing";
+            html5QrCode.pause(); 
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors", 
+                body: JSON.stringify({ regID: decodedText, instName: instName })
+            })
+            .then(() => {
+                resDiv.innerText = "✅ บันทึกสำเร็จ!\nID: " + decodedText;
+                resDiv.className = "success";
+                setTimeout(() => {
+                    resDiv.innerText = "พร้อมสแกนคนต่อไป...";
+                    resDiv.className = "";
+                    html5QrCode.resume();
+                }, 3000);
+            })
+            .catch(err => {
+                resDiv.innerText = "❌ เกิดข้อผิดพลาด กรุณาลองใหม่";
+                resDiv.className = "error";
+                setTimeout(() => html5QrCode.resume(), 3000);
+            });
+        }
+
+        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+        // เริ่มต้นการสแกน
+        function startCamera() {
+            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+            .then(() => {
+                document.getElementById('result').innerText = "ส่อง QR Code ได้เลยครับ";
+                document.getElementById('retryBtn').style.display = "none";
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('result').innerText = "❌ ไม่สามารถเข้าถึงกล้องได้ (กรุณากด Allow)";
+                document.getElementById('result').className = "error";
+                document.getElementById('retryBtn').style.display = "inline-block";
+            });
+        }
+
+        // เรียกใช้งานกล้องเมื่อโหลดหน้าเว็บ
+        window.onload = startCamera;
+    </script>
+</body>
+</html>
