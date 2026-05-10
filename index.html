@@ -68,34 +68,8 @@
     <div id="result">พร้อมสำหรับการสแกน</div>
 
     <script>
-        // URL ล่าสุดที่คุณระบุมา
+        // URL ล่าสุดที่คุณระบุมา (ลงท้ายด้วย 20E8/exec)
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXDgoW-88F5BauTkrqfB3ReoLZLlG1pCpmpXLcXXl3xzu0q7Cic1nJ_WBKmELL20E8/exec";
         
         const urlParams = new URLSearchParams(window.location.search);
         const instName = urlParams.get('inst') || "General_Visitor";
-
-        // ปรับการแสดงผลชื่อตามประเภทการเช็คอิน
-        const displayDiv = document.getElementById('instDisplay');
-        if (instName === "General_Visitor") {
-            displayDiv.innerText = "📢 Welcome to Main Event Check-in";
-        } else {
-            displayDiv.innerText = "📍 Institution: " + instName.replace(/_/g, ' ');
-        }
-
-        const html5QrCode = new Html5Qrcode("reader");
-
-        function onScanSuccess(decodedText) {
-            const resDiv = document.getElementById('result');
-            resDiv.innerText = "⏳ กำลังบันทึกข้อมูล...";
-            resDiv.className = "processing";
-            
-            // หยุดกล้องชั่วคราวขณะประมวลผล
-            html5QrCode.pause(); 
-
-            // ส่งข้อมูลไปยัง Google Script
-            fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors", 
-                body: JSON.stringify({ 
-                    regID: decodedText, 
-                    instName: inst
