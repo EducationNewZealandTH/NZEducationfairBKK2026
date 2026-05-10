@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner - NZ Education 2026</title>
+    <title>Institution Scanner - NZ 2026</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { 
@@ -17,8 +17,18 @@
             background-color: #003366; 
             color: white; 
             padding: 20px 0; 
-            margin-bottom: 30px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            margin-bottom: 25px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .inst-label { 
+            background-color: #ffffff;
+            color: #003366; 
+            padding: 10px;
+            margin-bottom: 15px; 
+            font-weight: bold;
+            border-radius: 8px;
+            display: inline-block;
+            border: 1px solid #003366;
         }
         #reader { 
             width: 100%; 
@@ -34,11 +44,10 @@
             font-size: 1.2rem; 
             font-weight: bold; 
             padding: 15px; 
-            min-height: 60px; 
             border-radius: 10px; 
             max-width: 400px; 
-            margin-left: auto; 
-            margin-right: auto; 
+            margin: auto; 
+            min-height: 60px;
         }
         .status-waiting { color: #666; }
         .status-process { color: #ff9800; }
@@ -48,41 +57,52 @@
 </head>
 <body>
     <div class="header">
-        <h2 style="margin:0;">🇳🇿 NZ Check-in System</h2>
-        <p style="margin:5px 0 0 0; font-size: 0.9rem;">งานการศึกษานิวซีแลนด์ 2569</p>
+        <h2 style="margin:0;">🇳🇿 Institution Check-in</h2>
+        <p style="margin:5px 0 0 0; font-size: 0.8rem;">ระบบเช็คอินรายสถาบัน - งานนิวซีแลนด์ 2569</p>
     </div>
+
+    <div class="inst-label" id="displayInst">📍 กำลังโหลดสถาบัน...</div>
 
     <div id="reader"></div>
     
-    <div id="result" class="status-waiting">กรุณาส่องกล้องไปที่ QR Code</div>
+    <div id="result" class="status-waiting">กรุณาส่อง QR Code เพื่อบันทึกข้อมูล</div>
 
     <script>
-        // URL ของ Google Apps Script ที่คุณระบุมา
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDfMwsKCaRMtjjV1X9osyYpR1SJmVXPFJxjopDxtUG_NQ95Cdqbkf0km2TsYzajsmC/exec";
+        // URL ของ Google Apps Script ตัวล่าสุดที่คุณระบุมา
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpNOPKa5qlvsOwGkUlxArfkXP3USEDvuvRMO7FjOp6X0eYFEw0L7zS5yaS9hjPyib_/exec";
+        
+        // ดึงชื่อสถาบันจาก URL (เช่น ?inst=Auckland_University)
+        const urlParams = new URLSearchParams(window.location.search);
+        const instName = urlParams.get('inst') || "General_Visitor";
+        
+        // แสดงชื่อสถาบันบนหน้าจอ (เปลี่ยน _ เป็นช่องว่างเพื่อให้สวยงาม)
+        document.getElementById('displayInst').innerText = "📍 Institution: " + instName.replace(/_/g, ' ');
 
         const html5QrCode = new Html5Qrcode("reader");
 
         function onScanSuccess(decodedText) {
             const resDiv = document.getElementById('result');
-            resDiv.innerText = "⏳ กำลังตรวจสอบข้อมูล...";
+            resDiv.innerText = "⏳ กำลังบันทึกข้อมูล...";
             resDiv.className = "status-process";
             
-            // หยุดสแกนชั่วคราวเพื่อป้องกันการส่งข้อมูลซ้ำซ้อนขณะประมวลผล
+            // หยุดกล้องชั่วคราวขณะประมวลผล
             html5QrCode.pause(); 
 
-            // ส่ง ID ที่สแกนได้ไปยัง Google Script ผ่าน POST
+            // ส่ง ID และชื่อสถาบันไปยัง Google Script
             fetch(SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors", // ใช้ no-cors สำหรับ Google Script Redirect
-                body: JSON.stringify({ regID: decodedText })
+                mode: "no-cors", // ใช้ no-cors เพื่อข้ามปัญหา Redirect ของ Google
+                body: JSON.stringify({ 
+                    regID: decodedText, 
+                    instName: instName 
+                })
             })
             .then(() => {
-                // เนื่องจาก Google Script POST มักจะไม่ส่ง JSON กลับมาตรงๆ ในโหมด no-cors 
-                // จึงใช้วิธีแจ้งว่าส่งข้อมูลเรียบร้อยแล้ว หรือปรับการทำงานตามความเหมาะสม
-                resDiv.innerText = "✅ บันทึกข้อมูลสำเร็จ (รหัส: " + decodedText + ")";
+                // แจ้งผลสำเร็จ (เนื่องจาก no-cors จะไม่เห็นค่า JSON ที่ตอบกลับ แต่ข้อมูลจะเข้า Sheet แล้ว)
+                resDiv.innerText = "✅ บันทึกสำเร็จ!\nสถาบัน: " + instName.replace(/_/g, ' ') + "\n(ID: " + decodedText + ")";
                 resDiv.className = "status-success";
                 
-                // รอ 3 วินาทีเพื่อให้เจ้าหน้าที่ดูผลลัพธ์ แล้วเริ่มสแกนคนต่อไป
+                // รอ 3 วินาทีแล้วเริ่มสแกนคนต่อไป
                 setTimeout(() => {
                     resDiv.innerText = "พร้อมสแกนคนต่อไป...";
                     resDiv.className = "status-waiting";
@@ -90,21 +110,15 @@
                 }, 3000);
             })
             .catch(err => {
-                resDiv.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+                resDiv.innerText = "❌ เกิดข้อผิดพลาดการเชื่อมต่อ";
                 resDiv.className = "status-error";
                 console.error(err);
                 setTimeout(() => html5QrCode.resume(), 3000);
             });
         }
 
-        // การตั้งค่ากล้อง
-        const config = { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0 
-        };
-
-        // เริ่มเปิดกล้องหลัง (Environment)
+        // เริ่มเปิดกล้องหลัง
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
         .catch(err => {
             document.getElementById('result').innerText = "❌ ไม่สามารถเปิดกล้องได้: " + err;
