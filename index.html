@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Institution Scanner - NZ 2026</title>
+    <title>NZ Fair 2026 - Institution Scanner</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             text-align: center; 
             padding: 20px; 
-            background-color: #f8f9fa; 
+            background-color: #f0f2f5; 
             margin: 0; 
         }
         .header { 
             background-color: #003366; 
             color: white; 
-            padding: 20px 0; 
-            margin-bottom: 25px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px 0; 
+            margin-bottom: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
         }
-        .inst-label { 
-            background-color: #ffffff;
+        .inst-badge { 
+            background: white; 
             color: #003366; 
-            padding: 10px;
+            padding: 8px 20px; 
+            border-radius: 20px; 
+            display: inline-block; 
+            font-weight: bold; 
+            border: 2px solid #003366; 
             margin-bottom: 15px; 
-            font-weight: bold;
-            border-radius: 8px;
-            display: inline-block;
-            border: 1px solid #003366;
+            font-size: 1rem;
         }
         #reader { 
             width: 100%; 
@@ -40,89 +41,97 @@
             background: white; 
         }
         #result { 
-            margin-top: 25px; 
-            font-size: 1.2rem; 
+            margin-top: 20px; 
+            font-size: 1.1rem; 
             font-weight: bold; 
             padding: 15px; 
             border-radius: 10px; 
             max-width: 400px; 
             margin: auto; 
             min-height: 60px;
+            transition: all 0.3s;
         }
-        .status-waiting { color: #666; }
-        .status-process { color: #ff9800; }
-        .status-success { background-color: #d4edda; color: #155724; }
-        .status-error { background-color: #f8d7da; color: #721c24; }
+        /* สถานะต่างๆ */
+        .waiting { color: #666; }
+        .processing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
     <div class="header">
         <h2 style="margin:0;">🇳🇿 Institution Check-in</h2>
-        <p style="margin:5px 0 0 0; font-size: 0.8rem;">ระบบเช็คอินรายสถาบัน - งานนิวซีแลนด์ 2569</p>
+        <p style="margin:5px 0 0 0; font-size: 0.8rem;">ระบบบันทึกรายสถาบัน - NZ Fair 2026</p>
     </div>
 
-    <div class="inst-label" id="displayInst">📍 กำลังโหลดสถาบัน...</div>
+    <div class="inst-badge" id="instDisplay">📍 Loading Institution...</div>
 
     <div id="reader"></div>
     
-    <div id="result" class="status-waiting">กรุณาส่อง QR Code เพื่อบันทึกข้อมูล</div>
+    <div id="result" class="waiting">กรุณาส่อง QR Code เพื่อบันทึกข้อมูล</div>
 
     <script>
-        // URL ของ Google Apps Script ตัวล่าสุดที่คุณระบุมา
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpNOPKa5qlvsOwGkUlxArfkXP3USEDvuvRMO7FjOp6X0eYFEw0L7zS5yaS9hjPyib_/exec";
+        // URL ของ Google Apps Script ตัวล่าสุดที่คุณแจ้งมา
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgxnAbhzXPZtL3VKdj9BQlQ6SiKums35pyaFSARtOuzayEWZDfg5pOF2c-pqM7hb4/exec";
         
-        // ดึงชื่อสถาบันจาก URL (เช่น ?inst=Auckland_University)
+        // ดึงชื่อสถาบันจาก URL Parameter เช่น ?inst=Auckland_University
         const urlParams = new URLSearchParams(window.location.search);
         const instName = urlParams.get('inst') || "General_Visitor";
         
-        // แสดงชื่อสถาบันบนหน้าจอ (เปลี่ยน _ เป็นช่องว่างเพื่อให้สวยงาม)
-        document.getElementById('displayInst').innerText = "📍 Institution: " + instName.replace(/_/g, ' ');
+        // แสดงชื่อสถาบันบนหน้าจอ (เปลี่ยนขีดล่างเป็นเว้นวรรค)
+        document.getElementById('instDisplay').innerText = "📍 สถาบัน: " + instName.replace(/_/g, ' ');
 
         const html5QrCode = new Html5Qrcode("reader");
 
         function onScanSuccess(decodedText) {
             const resDiv = document.getElementById('result');
             resDiv.innerText = "⏳ กำลังบันทึกข้อมูล...";
-            resDiv.className = "status-process";
+            resDiv.className = "processing";
             
-            // หยุดกล้องชั่วคราวขณะประมวลผล
+            // หยุดสแกนชั่วคราวขณะประมวลผล
             html5QrCode.pause(); 
 
-            // ส่ง ID และชื่อสถาบันไปยัง Google Script
+            // ส่งข้อมูลไปยัง Google Script
             fetch(SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors", // ใช้ no-cors เพื่อข้ามปัญหา Redirect ของ Google
+                mode: "no-cors", // จำเป็นสำหรับ Google Script เพื่อเลี่ยงปัญหา CORS
                 body: JSON.stringify({ 
                     regID: decodedText, 
                     instName: instName 
                 })
             })
             .then(() => {
-                // แจ้งผลสำเร็จ (เนื่องจาก no-cors จะไม่เห็นค่า JSON ที่ตอบกลับ แต่ข้อมูลจะเข้า Sheet แล้ว)
-                resDiv.innerText = "✅ บันทึกสำเร็จ!\nสถาบัน: " + instName.replace(/_/g, ' ') + "\n(ID: " + decodedText + ")";
-                resDiv.className = "status-success";
+                // แสดงสถานะสำเร็จ
+                resDiv.innerText = "✅ บันทึกสำเร็จ!\nID: " + decodedText + "\nสถาบัน: " + instName.replace(/_/g, ' ');
+                resDiv.className = "success";
                 
                 // รอ 3 วินาทีแล้วเริ่มสแกนคนต่อไป
                 setTimeout(() => {
                     resDiv.innerText = "พร้อมสแกนคนต่อไป...";
-                    resDiv.className = "status-waiting";
+                    resDiv.className = "waiting";
                     html5QrCode.resume();
                 }, 3000);
             })
             .catch(err => {
-                resDiv.innerText = "❌ เกิดข้อผิดพลาดการเชื่อมต่อ";
-                resDiv.className = "status-error";
+                // กรณีเกิดข้อผิดพลาดในการเชื่อมต่อ
+                resDiv.innerText = "❌ เกิดข้อผิดพลาดในการส่งข้อมูล";
+                resDiv.className = "error";
                 console.error(err);
                 setTimeout(() => html5QrCode.resume(), 3000);
             });
         }
 
+        // การตั้งค่ากล้อง
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 } 
+        };
+
         // เริ่มเปิดกล้องหลัง
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
         .catch(err => {
             document.getElementById('result').innerText = "❌ ไม่สามารถเปิดกล้องได้: " + err;
-            document.getElementById('result').className = "status-error";
+            document.getElementById('result').className = "error";
         });
     </script>
 </body>
