@@ -9,95 +9,110 @@
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             text-align: center; 
-            padding: 20px; 
-            background-color: #f4f7f9; 
+            padding: 0; 
+            background-color: #f0f2f5; 
             margin: 0; 
         }
         .header { 
             background-color: #003366; 
             color: white; 
-            padding: 20px 0; 
-            margin-bottom: 20px; 
+            padding: 15px 10px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
         }
-        .inst-badge { 
-            background: white; 
-            color: #003366; 
+        /* ปรับปรุงแถบชื่อสถาบันให้เด่นมาก */
+        .inst-container {
+            background-color: #ffffff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-bottom: 4px solid #cc0000; /* เส้นสีแดงตัดกับน้ำเงิน */
+        }
+        .inst-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .inst-name { 
+            background: #003366; 
+            color: #ffffff; 
             padding: 10px 20px; 
-            border-radius: 25px; 
+            border-radius: 8px; 
             display: inline-block; 
-            font-weight: bold; 
-            border: 2px solid #003366; 
-            margin-bottom: 15px; 
+            font-weight: 800; 
+            font-size: 1.4rem; /* ใหญ่สะใจ */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border: 2px solid #cc0000;
         }
         #reader { 
-            width: 100%; 
-            max-width: 400px; 
-            margin: auto; 
-            border: 4px solid #003366; 
-            border-radius: 15px; 
+            width: 95%; 
+            max-width: 450px; 
+            margin: 10px auto; 
+            border: 5px solid #003366; 
+            border-radius: 20px; 
             overflow: hidden; 
             background: white; 
-            min-height: 300px;
         }
         #result { 
-            margin-top: 20px; 
-            font-size: 1.1rem; 
+            margin: 20px auto; 
+            font-size: 1.2rem; 
             font-weight: bold; 
             padding: 15px; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             max-width: 400px; 
-            margin: auto; 
             min-height: 60px;
         }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .processing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .success { background-color: #28a745; color: white; }
+        .error { background-color: #dc3545; color: white; }
+        .processing { background-color: #ffc107; color: black; }
         .btn-retry {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background-color: #003366;
+            margin: 10px;
+            padding: 12px 25px;
+            background-color: #cc0000;
             color: white;
             border: none;
             border-radius: 5px;
-            cursor: pointer;
+            font-weight: bold;
             display: none;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2 style="margin:0;">🇳🇿 Main NZ Education Fair 2026 Check in</h2>
-        <p style="margin:5px 0 0 0; font-size: 0.9rem;">New Zealand Education Fair 2026</p>
+        <h3 style="margin:0; font-size: 1rem;">🇳🇿 NZ Education Fair 2026</h3>
+        <p style="margin:2px 0 0 0; font-size: 0.7rem; opacity: 0.8;">Attendance Tracking System</p>
     </div>
 
-    <div class="inst-badge" id="instDisplay">📍 Loading...</div>
+    <div class="inst-container">
+        <span class="inst-label">Checking in at:</span>
+        <div class="inst-name" id="instDisplay">Loading...</div>
+    </div>
 
     <div id="reader"></div>
-    <button id="retryBtn" class="btn-retry" onclick="location.reload()">ลองเปิดกล้องอีกครั้ง</button>
+    <button id="retryBtn" class="btn-retry" onclick="location.reload()">เปิดกล้องอีกครั้ง</button>
     
-    <div id="result">กำลังเตรียมความพร้อม...</div>
+    <div id="result">กรุณาส่อง QR Code</div>
 
     <script>
-        // URL ล่าสุด (ลงท้ายด้วย 20E8/exec)
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXDgoW-88F5BauTkrqfB3ReoLZLlG1pCpmpXLcXXl3xzu0q7Cic1nJ_WBKmELL20E8/exec";
         
         const urlParams = new URLSearchParams(window.location.search);
         const instName = urlParams.get('inst') || "General_Visitor";
 
-        // แสดงชื่อสถาบัน
         const displayDiv = document.getElementById('instDisplay');
         if (instName === "General_Visitor") {
-            displayDiv.innerText = "📢 Welcome to Main Event Check-in";
+            displayDiv.innerText = "MAIN ENTRANCE";
+            displayDiv.style.backgroundColor = "#cc0000"; // สีแดงสำหรับงานหลัก
         } else {
-            displayDiv.innerText = "📍 Institution: " + instName.replace(/_/g, ' ');
+            displayDiv.innerText = instName.replace(/_/g, ' ').toUpperCase();
         }
 
         const html5QrCode = new Html5Qrcode("reader");
 
         function onScanSuccess(decodedText) {
             const resDiv = document.getElementById('result');
-            resDiv.innerText = "⏳ กำลังบันทึกข้อมูล...";
+            resDiv.innerText = "⏳ บันทึกข้อมูล...";
             resDiv.className = "processing";
             html5QrCode.pause(); 
 
@@ -107,16 +122,16 @@
                 body: JSON.stringify({ regID: decodedText, instName: instName })
             })
             .then(() => {
-                resDiv.innerText = "✅ บันทึกสำเร็จ!\nID: " + decodedText;
+                resDiv.innerText = "✅ สำเร็จ: " + decodedText;
                 resDiv.className = "success";
                 setTimeout(() => {
-                    resDiv.innerText = "พร้อมสแกนคนต่อไป...";
+                    resDiv.innerText = "สแกนคนต่อไป...";
                     resDiv.className = "";
                     html5QrCode.resume();
                 }, 3000);
             })
             .catch(err => {
-                resDiv.innerText = "❌ เกิดข้อผิดพลาด กรุณาลองใหม่";
+                resDiv.innerText = "❌ ผิดพลาด กรุณาลองใหม่";
                 resDiv.className = "error";
                 setTimeout(() => html5QrCode.resume(), 3000);
             });
@@ -124,22 +139,17 @@
 
         const config = { fps: 15, qrbox: { width: 250, height: 250 } };
 
-        // เริ่มต้นการสแกน
         function startCamera() {
             html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
             .then(() => {
-                document.getElementById('result').innerText = "ส่อง QR Code ได้เลยครับ";
                 document.getElementById('retryBtn').style.display = "none";
             })
             .catch(err => {
-                console.error(err);
-                document.getElementById('result').innerText = "❌ ไม่สามารถเข้าถึงกล้องได้ (กรุณากด Allow)";
-                document.getElementById('result').className = "error";
+                document.getElementById('result').innerText = "❌ กล้องไม่ทำงาน กรุณาให้สิทธิ์กล้อง";
                 document.getElementById('retryBtn').style.display = "inline-block";
             });
         }
 
-        // เรียกใช้งานกล้องเมื่อโหลดหน้าเว็บ
         window.onload = startCamera;
     </script>
 </body>
